@@ -1,0 +1,20 @@
+{
+  "logging": {
+    "writeFunctionRuntineStartupLogs": true,
+    "WriteMockRequestMatchingLogs": true
+  },
+  "workflow": {
+    "externalApiUrlsToMock": [
+      "http://api.open-notify.org",
+      "https://api.bigdatacloud.net"
+    ],
+    "builtInConnectorsToMock": [
+      "executeQuery",
+      "sendMessage",
+      "uploadBlob",
+      "deleteBlob",
+      "putMessage"
+    ],
+    "autoConfigureWithStatelessRunHistory": true
+  }
+}

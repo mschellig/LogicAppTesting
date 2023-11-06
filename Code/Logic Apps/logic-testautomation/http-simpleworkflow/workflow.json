@@ -1,0 +1,131 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Response": {
+                "inputs": {
+                    "body": "@body('Transform_JSON_To_JSON_-_prepare_person')",
+                    "statusCode": 200
+                },
+                "kind": "Http",
+                "runAfter": {
+                    "Send_message": [
+                        "SUCCEEDED"
+                    ]
+                },
+                "type": "Response"
+            },
+            "Response_-_NOK": {
+                "inputs": {
+                    "statusCode": 400
+                },
+                "kind": "Http",
+                "runAfter": {
+                    "Scope_-_try": [
+                        "FAILED"
+                    ]
+                },
+                "type": "Response"
+            },
+            "Scope_-_try": {
+                "actions": {
+                    "Compose_-_prepare_information": {
+                        "inputs": {
+                            "cityinformation": "@body('HTTP_-_get_city_information')",
+                            "request": "@triggerBody()"
+                        },
+                        "runAfter": {
+                            "HTTP_-_get_city_information": [
+                                "SUCCEEDED"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "HTTP_-_get_city_information": {
+                        "inputs": {
+                            "method": "GET",
+                            "uri": "@{appsetting('postcodeurl')}@{triggerBody()?['postalcode']}"
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        },
+                        "type": "Http"
+                    },
+                    "Transform_JSON_To_JSON_-_prepare_person": {
+                        "inputs": {
+                            "content": "@outputs('Compose_-_prepare_information')",
+                            "map": {
+                                "name": "PREPAREPERSON.liquid",
+                                "source": "LogicApp"
+                            }
+                        },
+                        "kind": "JsonToJson",
+                        "runAfter": {
+                            "Compose_-_prepare_information": [
+                                "SUCCEEDED"
+                            ]
+                        },
+                        "type": "Liquid"
+                    }
+                },
+                "runAfter": {},
+                "type": "Scope"
+            },
+            "Send_message": {
+                "inputs": {
+                    "parameters": {
+                        "entityName": "sb-testautmation-q",
+                        "message": {
+                            "contentData": "yoyoyo"
+                        }
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "serviceBus",
+                        "operationId": "sendMessage",
+                        "serviceProviderId": "/serviceProviders/serviceBus"
+                    }
+                },
+                "runAfter": {
+                    "Scope_-_try": [
+                        "SUCCEEDED"
+                    ]
+                },
+                "type": "ServiceProvider"
+            }
+        },
+        "contentVersion": "1.0.0.1",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "birthdate": {
+                                "type": "string"
+                            },
+                            "name1": {
+                                "type": "string"
+                            },
+                            "name2": {
+                                "type": "string"
+                            },
+                            "postalcode": {
+                                "type": "integer"
+                            },
+                            "salary_year": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "kind": "Stateful"
+}

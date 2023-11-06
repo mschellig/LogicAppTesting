@@ -1,0 +1,20 @@
+{
+  "logging": {
+    "writeFunctionRuntineStartupLogs": false,
+    "WriteMockRequestMatchingLogs": true
+  },
+  "workflow": {
+    "externalApiUrlsToMock": [
+      "http://api.zippopotam.us",
+      "http://api.open-notify.org"
+    ],
+    "builtInConnectorsToMock": [
+      "executeQuery",
+      "sendMessage",
+      "uploadBlob",
+      "deleteBlob",
+      "putMessage"
+    ],
+    "autoConfigureWithStatelessRunHistory": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+"fullname": "{{ content.request.name1 }} {{ content.request.name2 }}",
+"dob": "{{ content.request.birthdate }}",
+"salary_month": {{ content.request.salary_year | DividedBy: 12 }},
+"postalcode": "{{ content.request.postalcode }}",
+"city": "{{ content.cityinformation.places[0].['place name'] }}",
+"state": "{{ content.cityinformation.places[0].state }}"
+}

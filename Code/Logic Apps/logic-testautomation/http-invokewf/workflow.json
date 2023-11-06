@@ -1,0 +1,87 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Response": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 200,
+                    "body": "@body('Invoke_a_workflow_in_this_workflow_app')"
+                },
+                "runAfter": {
+                    "Scope_-_try": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Response_-_NOK": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 400
+                },
+                "runAfter": {
+                    "Scope_-_try": [
+                        "FAILED"
+                    ]
+                }
+            },
+            "Scope_-_try": {
+                "type": "Scope",
+                "actions": {
+                    "Invoke_a_workflow_in_this_workflow_app": {
+                        "type": "Workflow",
+                        "inputs": {
+                            "host": {
+                                "workflow": {
+                                    "id": "http-simpleworkflow"
+                                }
+                            },
+                            "body": {
+                                "birthdate": "@triggerBody()?['birthdate']",
+                                "name1": "@triggerBody()?['name1']",
+                                "name2": "@triggerBody()?['name2']",
+                                "postalcode": "@triggerBody()?['postalcode']",
+                                "salary_year": "@triggerBody()?['salary_year']"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {}
+            }
+        },
+        "contentVersion": "1.0.0.1",
+        "outputs": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "birthdate": {
+                                "type": "string"
+                            },
+                            "name1": {
+                                "type": "string"
+                            },
+                            "name2": {
+                                "type": "string"
+                            },
+                            "postalcode": {
+                                "type": "integer"
+                            },
+                            "salary_year": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "parameters": {}
+    },
+    "kind": "Stateful"
+}

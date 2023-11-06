@@ -1,0 +1,76 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope_-_try": {
+        "actions": {
+          "Invoke_a_workflow_in_this_workflow_app": {
+            "inputs": {
+              "body": {
+                "birthdate": "@{triggerBody()?['contentData']?['birthdate']}",
+                "name1": "@{triggerBody()?['contentData']?['name1']}",
+                "name2": "@{triggerBody()?['contentData']?['name2']}",
+                "postalcode": "@triggerBody()?['contentData']?['postalcode']",
+                "salary_year": "@triggerBody()?['contentData']?['salary_year']"
+              },
+              "host": {
+                "workflow": {
+                  "id": "http-simpleworkflow"
+                }
+              }
+            },
+            "type": "Workflow"
+          }
+        },
+        "runAfter": {},
+        "type": "Scope"
+      },
+      "Terminate": {
+        "inputs": {
+          "runStatus": "Succeeded"
+        },
+        "runAfter": {
+          "Scope_-_try": [
+            "SUCCEEDED"
+          ]
+        },
+        "type": "Terminate"
+      },
+      "Terminate_-_fail": {
+        "inputs": {
+          "runError": {
+            "code": "400"
+          },
+          "runStatus": "Failed"
+        },
+        "runAfter": {
+          "Scope_-_try": [
+            "FAILED"
+          ]
+        },
+        "type": "Terminate"
+      }
+    },
+    "contentVersion": "1.0.0.1",
+    "outputs": {},
+    "parameters": {},
+    "triggers": {
+      "When_messages_are_available_in_a_queue": {
+        "inputs": {
+          "parameters": {
+            "isSessionsEnabled": false,
+            "queueName": "sb-testautmation-q"
+          },
+          "serviceProviderConfiguration": {
+            "connectionName": "serviceBus",
+            "operationId": "receiveQueueMessages",
+            "serviceProviderId": "/serviceProviders/serviceBus"
+          }
+        },
+        "splitOn": "@triggerOutputs()?['body']",
+        "type": "ServiceProvider"
+      }
+    }
+  },
+  "kind": "Stateful"
+}

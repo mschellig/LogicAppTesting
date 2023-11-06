@@ -1,0 +1,20 @@
+{
+    "longitude": "{{ content.iss.longitude }}",
+    "latitude": "{{ content.iss.latitude }}",
+    "place": "{{ content.world.continent }} {{ content.world.city }}",
+    {% if {{content.world.city}} == "Stuttgart" %}
+        "result": "You are done",
+    {% elsif {{content.world.principalSubdivision}} == "Baden-Wurttemberg" %}
+    "result": "RUN!",
+    {% elsif {{content.world.continent}} == "" %}
+    "result": "Luckyly ocean!",
+    {% else %}
+    "result": "Poor {{ content.world.continent }}",
+
+    {% endif %}
+    {% if {{content.world.city}} == "Stuttgart" %}
+        "survive": false
+    {% else %}
+    "survive": true,
+    {% endif %}
+}

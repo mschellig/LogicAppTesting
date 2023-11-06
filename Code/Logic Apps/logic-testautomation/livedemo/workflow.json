@@ -1,0 +1,152 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Compose_-_prepare_for_mapping": {
+        "inputs": {
+          "iss": {
+            "latitude": "@{body('HTTP_-_Get_ISS_Position')?['iss_position']?['latitude']}",
+            "longitude": "@{body('HTTP_-_Get_ISS_Position')?['iss_position']?['longitude']}"
+          },
+          "name": "@{triggerBody()?['name']}",
+          "world": {
+            "city": "@{body('HTTP_-_Reverse_Geocode')?['city']}",
+            "continent": "@{body('HTTP_-_Reverse_Geocode')?['continent']}",
+            "latitude": "@{body('HTTP_-_Reverse_Geocode')?['latitude']}",
+            "longitutde": "@{body('HTTP_-_Reverse_Geocode')?['longitude']}",
+            "principalSubdivision": "@{body('HTTP_-_Reverse_Geocode')?['principalSubdivision']}"
+          }
+        },
+        "runAfter": {
+          "HTTP_-_Reverse_Geocode": [
+            "SUCCEEDED"
+          ]
+        },
+        "type": "Compose"
+      },
+      "Condition_-_Survive": {
+        "actions": {
+          "Send_message": {
+            "inputs": {
+              "parameters": {
+                "entityName": "sb-testautmation-q",
+                "message": {
+                  "contentData": "@outputs('Transform_JSON_To_JSON')"
+                }
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "serviceBus",
+                "operationId": "sendMessage",
+                "serviceProviderId": "/serviceProviders/serviceBus"
+              }
+            },
+            "type": "ServiceProvider"
+          }
+        },
+        "else": {
+          "actions": {
+            "Terminate_-_You_Die": {
+              "inputs": {
+                "runError": {
+                  "message": "@outputs('Transform_JSON_To_JSON')?['result']"
+                },
+                "runStatus": "Failed"
+              },
+              "type": "Terminate"
+            }
+          }
+        },
+        "expression": {
+          "and": [
+            {
+              "equals": [
+                "@body('Transform_JSON_To_JSON')?['survive']",
+                "@true"
+              ]
+            }
+          ]
+        },
+        "runAfter": {
+          "Transform_JSON_To_JSON": [
+            "SUCCEEDED"
+          ]
+        },
+        "type": "If"
+      },
+      "HTTP_-_Get_ISS_Position": {
+        "inputs": {
+          "method": "GET",
+          "uri": "@{appsetting('issUrl')}"
+        },
+        "runAfter": {},
+        "runtimeConfiguration": {
+          "contentTransfer": {
+            "transferMode": "Chunked"
+          }
+        },
+        "type": "Http"
+      },
+      "HTTP_-_Reverse_Geocode": {
+        "inputs": {
+          "method": "GET",
+          "queries": {
+            "latitude": "@{body('HTTP_-_Get_ISS_Position')?['iss_position']?['latitude']}",
+            "longitude": "@{body('HTTP_-_Get_ISS_Position')?['iss_position']?['longitude']}"
+          },
+          "uri": "@{appsetting('reverseGeocodeUrl')}"
+        },
+        "runAfter": {
+          "HTTP_-_Get_ISS_Position": [
+            "SUCCEEDED"
+          ]
+        },
+        "runtimeConfiguration": {
+          "contentTransfer": {
+            "transferMode": "Chunked"
+          }
+        },
+        "type": "Http"
+      },
+      "Transform_JSON_To_JSON": {
+        "inputs": {
+          "content": "@outputs('Compose_-_prepare_for_mapping')",
+          "map": {
+            "name": "LIVEDEMO.liquid",
+            "source": "LogicApp"
+          }
+        },
+        "kind": "JsonToJson",
+        "runAfter": {
+          "Compose_-_prepare_for_mapping": [
+            "SUCCEEDED"
+          ]
+        },
+        "type": "Liquid"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "When_a_message_is_received_in_a_queue_(auto-complete)": {
+        "inputs": {
+          "host": {
+            "connection": {
+              "referenceName": "servicebus"
+            }
+          },
+          "method": "get",
+          "path": "/@{encodeURIComponent(encodeURIComponent('sb-livedemo'))}/messages/head",
+          "queries": {
+            "queueType": "Main"
+          }
+        },
+        "recurrence": {
+          "frequency": "Second",
+          "interval": 5
+        },
+        "type": "ApiConnection"
+      }
+    }
+  },
+  "kind": "Stateful"
+}

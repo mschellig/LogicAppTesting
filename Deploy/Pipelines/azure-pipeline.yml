@@ -1,0 +1,76 @@
+trigger:
+- none
+
+pool:
+  vmImage: windows-latest
+
+stages:
+  - stage: Stage_Prepare
+    displayName: Prepare
+    jobs: 
+      - job: Job_Prepare_Agent
+        displayName: Prepare Agent
+        steps:
+
+        ## install
+          - task: ShellScript@3 ##azurite
+            displayName: 'Install Azurite'
+            inputs:
+              targetType: inline
+              script: |
+                npm install -g azurite
+            
+          - powershell: | ##azure function core tools
+              Invoke-WebRequest https://go.microsoft.com/fwlink/?linkid=2174087 -Outfile $(System.DefaultWorkingDirectory)\afct.msi
+              Start-Process $(System.DefaultWorkingDirectory)\afct.msi -ArgumentList "/quiet" -Wait
+            displayName: 'Download and Install Azure Functions Core Tools'
+            
+          - powershell: | ##cosmos emulator
+              Invoke-WebRequest https://aka.ms/cosmosdb-emulator -Outfile $(System.DefaultWorkingDirectory)\cosmosemulator.msi
+              Start-Process $(System.DefaultWorkingDirectory)\cosmosemulator.msi -ArgumentList "/quiet" -Wait
+            displayName: 'Download and Install CosmosEmulator'
+
+          - task: VisualStudioTestPlatformInstaller@1 ##vstest
+            inputs:
+              packageFeedSelector: 'nugetOrg'
+              versionSelector: 'latestPreRelease'
+           
+          - task: NuGetToolInstaller@1 ##nuget
+            inputs:
+              versionSpec: 5.8.0
+
+        ## run
+          - task: ShellScript@3 ##azurite
+            displayName: 'Run Azurite'
+            inputs:
+              targetType: inline
+              script: |
+                azurite --silent --location /tmp --debug /tmp/debug.log &
+
+          - task: ShellScript@3 ##cosmos emulator
+            displayName: 'Run CosmosDB Emulator'
+            inputs:
+              targetType: inline
+              script: |
+                "C:\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe" &
+
+
+        ## test    
+          - task: NuGetCommand@2 ##nuget restore
+            inputs:
+              restoreSolution: '$(System.DefaultWorkingDirectory)\Code\Solution.sln'
+
+          - task: MSBuild@1 ##build solution
+            displayName: 'Build Solution'
+            inputs:
+              solution: '$(System.DefaultWorkingDirectory)\Code\Solution.sln'
+              platform: 'Any CPU'
+              configuration: 'Debug'
+
+          - task: VSTest@2 ##execute tests
+            inputs:
+              testSelector: testAssemblies
+              testAssemblyVer2: '$(System.DefaultWorkingDirectory)\Code\Unittest\bin\Debug\net6.0\Unittest.dll'
+              searchFolder: '$(System.DefaultWorkingDirectory)\Code\Logic Apps\logic-testautomation'
+              customBatchSizeValue: 10
+              customRunTimePerBatchValue: 60
